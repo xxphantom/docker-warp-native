@@ -1,0 +1,15 @@
+services:
+  warp:
+    image: ghcr.io/xxphantom/docker-warp-native:latest
+    container_name: warp-native
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    volumes:
+      - warp-config:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
+    restart: always
+
+volumes:
+  warp-config:
