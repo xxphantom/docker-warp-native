@@ -1,0 +1,4 @@
+*.conf
+*.toml
+.env
+.DS_Store
