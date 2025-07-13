@@ -18,9 +18,9 @@ Docker контейнер для запуска Cloudflare WARP, публику�
 
 - [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
 
-Запуск возможен в двух вариантах:
+## Запуск возможен в двух вариантах (вариант docker compose рекомендуется):
 
-### 1. Запуск с помощью Docker Compose (требуется на каждой ноде)
+### 1. Первичный запуск с помощью Docker Compose (требуется на каждой ноде)
 
 ```bash
 mkdir -p /opt/docker-warp-native
@@ -29,12 +29,69 @@ cd /opt/docker-warp-native
 docker compose up -d && docker compose logs -f -t
 ```
 
-### 2. Запуск с помощью Docker CLI (требуется на каждой ноде)
+### Управление контейнером (вариант docker compose)
+
+```bash
+# Перейти в директорию с docker-compose.yml
+cd /opt/docker-warp-native
+
+# Запустить контейнер
+docker compose up -d && docker compose logs -f -t
+
+# Посмотреть логи
+docker compose logs -f -t
+
+# Остановить контейнер
+docker compose down
+
+# Перезапустить контейнер
+docker compose down && docker compose up -d && docker compose logs -f -t
+
+# Обновить контейнер
+docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t
+```
+
+### 2. Первичный запуск с помощью Docker CLI (требуется на каждой ноде)
 
 ```bash
 docker volume create warp-config
 
 docker run -d \
+  --name warp-native \
+  --network host \
+  --cap-add NET_ADMIN \
+  --cap-add SYS_MODULE \
+  -v warp-config:/etc/wireguard \
+  -v /lib/modules:/lib/modules:ro \
+  --restart always \
+  ghcr.io/xxphantom/docker-warp-native:latest
+```
+
+### Управление контейнером (вариант запуска docker run)
+
+```bash
+# Запустить контейнер
+docker run -d \
+  --name warp-native \
+  --network host \
+  --cap-add NET_ADMIN \
+  --cap-add SYS_MODULE \
+  -v warp-config:/etc/wireguard \
+  -v /lib/modules:/lib/modules:ro \
+  --restart always \
+  ghcr.io/xxphantom/docker-warp-native:latest
+
+# Посмотреть логи
+docker logs -f -t warp-native
+
+# Остановить контейнер
+docker stop warp-native
+
+# Перезапустить контейнер
+docker restart warp-native
+
+# Обновить контейнер
+docker pull ghcr.io/xxphantom/docker-warp-native:latest && docker stop warp-native && docker rm warp-native && docker run -d \
   --name warp-native \
   --network host \
   --cap-add NET_ADMIN \
@@ -67,28 +124,6 @@ curl --interface warp https://ipinfo.io
 }
 ```
 
-### Управление контейнером
-
-```bash
-# Перейти в директорию с docker-compose.yml
-cd /opt/docker-warp-native
-
-# Запустить контейнер
-docker compose up -d && docker compose logs -f -t
-
-# Посмотреть логи
-docker compose logs -f -t
-
-# Остановить контейнер
-docker compose down
-
-# Перезапустить контейнер
-docker compose down && docker compose up -d && docker compose logs -f -t
-
-# Обновить контейнер
-docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t
-```
-
 ## Использование
 
 После запуска контейнера, WARP интерфейс будет доступен на хост-системе. Вы можете направлять трафик через него в Xray конфигурации.
@@ -111,6 +146,7 @@ docker compose pull && docker compose down && docker compose up -d && docker com
   }
 }
 ```
+
 </details>
 
 <details>

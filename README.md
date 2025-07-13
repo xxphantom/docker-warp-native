@@ -18,9 +18,9 @@ Follow the official instructions:
 
 - [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
 
-Launch is possible in two ways:
+## Launch is possible in two ways (docker compose variant is recommended):
 
-### 1. Launch using Docker Compose (required on each node)
+### 1. Initial launch using Docker Compose (required on each node)
 
 ```bash
 mkdir -p /opt/docker-warp-native
@@ -29,12 +29,69 @@ cd /opt/docker-warp-native
 docker compose up -d && docker compose logs -f -t
 ```
 
-### 2. Launch using Docker CLI (required on each node)
+### Container Management (docker compose variant)
+
+```bash
+# Go to directory with docker-compose.yml
+cd /opt/docker-warp-native
+
+# Start container
+docker compose up -d && docker compose logs -f -t
+
+# View logs
+docker compose logs -f -t
+
+# Stop container
+docker compose down
+
+# Restart container
+docker compose down && docker compose up -d && docker compose logs -f -t
+
+# Update container
+docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t
+```
+
+### 2. Initial launch using Docker CLI (required on each node)
 
 ```bash
 docker volume create warp-config
 
 docker run -d \
+  --name warp-native \
+  --network host \
+  --cap-add NET_ADMIN \
+  --cap-add SYS_MODULE \
+  -v warp-config:/etc/wireguard \
+  -v /lib/modules:/lib/modules:ro \
+  --restart always \
+  ghcr.io/xxphantom/docker-warp-native:latest
+```
+
+### Container Management (docker run variant)
+
+```bash
+# Start container
+docker run -d \
+  --name warp-native \
+  --network host \
+  --cap-add NET_ADMIN \
+  --cap-add SYS_MODULE \
+  -v warp-config:/etc/wireguard \
+  -v /lib/modules:/lib/modules:ro \
+  --restart always \
+  ghcr.io/xxphantom/docker-warp-native:latest
+
+# View logs
+docker logs -f -t warp-native
+
+# Stop container
+docker stop warp-native
+
+# Restart container
+docker restart warp-native
+
+# Update container
+docker pull ghcr.io/xxphantom/docker-warp-native:latest && docker stop warp-native && docker rm warp-native && docker run -d \
   --name warp-native \
   --network host \
   --cap-add NET_ADMIN \
@@ -65,28 +122,6 @@ Should display something like:
   "timezone": "Europe/Amsterdam",
   "readme": "https://ipinfo.io/missingauth"
 }
-```
-
-### Container Management
-
-```bash
-# Go to directory with docker-compose.yml
-cd /opt/docker-warp-native
-
-# Start container
-docker compose up -d && docker compose logs -f -t
-
-# View logs
-docker compose logs -f -t
-
-# Stop container
-docker compose down
-
-# Restart container
-docker compose down && docker compose up -d && docker compose logs -f -t
-
-# Update container
-docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t
 ```
 
 ## Usage
