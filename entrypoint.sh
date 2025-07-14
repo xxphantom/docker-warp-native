@@ -123,18 +123,21 @@ while [ $i -le 10 ]; do
 done
 
 # Always verify with Cloudflare API
-curl_result=$(curl -s --interface warp https://www.cloudflare.com/cdn-cgi/trace | grep "warp=" | cut -d= -f2)
+curl_result=$(curl -s --interface warp --max-time 5 https://www.cloudflare.com/cdn-cgi/trace | grep "warp=" | cut -d= -f2)
 if [ "$curl_result" = "on" ]; then
     ok "Cloudflare confirmed: warp=on"
+elif [ "$curl_result" = "off" ]; then
+    warn "Cloudflare confirmed: warp=off"
 else
-    warn "Cloudflare did not confirm warp=on, but interface is working"
+    fail "Cloudflare did not respond in time"
 fi
 
 ok "WARP is ready!"
 info "Container is running. WARP interface is active."
 
 # Keep container running and handle signals
-trap 'echo ""; info "Shutting down WARP..."; wg-quick down warp 2>/dev/null; exit 0' SIGTERM SIGINT
+trap 'echo ""; info "Shutting down WARP..."; wg-quick down warp 2>/dev/null; ok "WARP shutdown"; exit 0' SIGTERM SIGINT
 
 # Keep container running
-tail -f /dev/null
+tail -f /dev/null &
+wait

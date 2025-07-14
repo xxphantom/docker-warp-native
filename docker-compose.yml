@@ -7,9 +7,6 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     volumes:
-      - warp-config:/etc/wireguard
+      - /opt/docker-warp-native:/etc/wireguard
       - /lib/modules:/lib/modules:ro
     restart: always
-
-volumes:
-  warp-config:
