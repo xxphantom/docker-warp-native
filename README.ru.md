@@ -29,6 +29,8 @@ cd /opt/docker-warp-native
 docker compose up -d && docker compose logs -f -t
 ```
 
+**Важно!** С версии 1.1.0 docker-compose.yml, файлы конфигурации будут храниться в директории `/opt/docker-warp-native` после первого запуска.
+
 ### Управление контейнером (вариант docker compose)
 
 ```bash
@@ -54,14 +56,14 @@ docker compose pull && docker compose down && docker compose up -d && docker com
 ### 2. Первичный запуск с помощью Docker CLI (требуется на каждой ноде)
 
 ```bash
-docker volume create warp-config
+mkdir -p /opt/docker-warp-native
 
 docker run -d \
   --name warp-native \
   --network host \
   --cap-add NET_ADMIN \
   --cap-add SYS_MODULE \
-  -v warp-config:/etc/wireguard \
+  -v /opt/docker-warp-native:/etc/wireguard \
   -v /lib/modules:/lib/modules:ro \
   --restart always \
   ghcr.io/xxphantom/docker-warp-native:latest
@@ -76,7 +78,7 @@ docker run -d \
   --network host \
   --cap-add NET_ADMIN \
   --cap-add SYS_MODULE \
-  -v warp-config:/etc/wireguard \
+  -v /opt/docker-warp-native:/etc/wireguard \
   -v /lib/modules:/lib/modules:ro \
   --restart always \
   ghcr.io/xxphantom/docker-warp-native:latest
@@ -96,7 +98,7 @@ docker pull ghcr.io/xxphantom/docker-warp-native:latest && docker stop warp-nati
   --network host \
   --cap-add NET_ADMIN \
   --cap-add SYS_MODULE \
-  -v warp-config:/etc/wireguard \
+  -v /opt/docker-warp-native:/etc/wireguard \
   -v /lib/modules:/lib/modules:ro \
   --restart always \
   ghcr.io/xxphantom/docker-warp-native:latest
