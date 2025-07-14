@@ -10,7 +10,8 @@ RUN apk add --no-cache \
     bash \
     grep \
     sed \
-    coreutils
+    coreutils \
+    dumb-init
 
 # Install wgcf
 ARG TARGETARCH
@@ -33,4 +34,4 @@ VOLUME ["/etc/wireguard"]
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD wg show warp >/dev/null 2>&1 || exit 1
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/app/entrypoint.sh"]
