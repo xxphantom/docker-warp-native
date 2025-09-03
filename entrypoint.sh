@@ -48,7 +48,37 @@ else
     
     info "Registering with WARP..."
     cd /etc/wireguard
-    yes | wgcf register || error_exit "Failed to register with WARP"
+    
+    if [ -f wgcf-account.toml ]; then
+        ok "Using existing WARP account"
+    else
+        info "Performing wgcf registration..."
+        
+        # Try registration with timeout and error handling  
+        output=$(timeout 60 sh -c 'yes | wgcf register' 2>&1)
+        ret=$?
+
+        if [ $ret -ne 0 ]; then
+            warn "wgcf register exited with code $ret"
+            
+            if echo "$output" | grep -q "500 Internal Server Error"; then
+                warn "Cloudflare returned 500 Internal Server Error - this is known behavior"
+            elif echo "$output" | grep -q "existing account detected"; then
+                warn "Existing account detected but file missing - trying alternative method"
+            fi
+            
+            info "Trying alternative registration method..."
+            echo | wgcf register >/dev/null 2>&1 || true
+            sleep 2
+        fi
+
+        # Check if account file was created
+        if [ ! -f wgcf-account.toml ]; then
+            error_exit "Registration failed: wgcf-account.toml file not created"
+        fi
+
+        ok "WARP account successfully registered"
+    fi
     
     info "Generating WARP configuration..."
     wgcf generate || error_exit "Failed to generate WARP configuration"
