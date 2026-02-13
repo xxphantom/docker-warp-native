@@ -10,59 +10,24 @@ Docker container for running Cloudflare WARP, publishing WireGuard interface to 
 - Minimal image size (~40MB) based on Alpine Linux
 - Very low memory usage (just a few megabytes)
 
-## WARP+ Support
-
-The container supports WARP+ (Cloudflare's premium tier) via the `WARP_LICENSE` environment variable.
-
-### Using with Docker Compose
-
-Uncomment the `environment` section in `docker-compose.yml`:
-
-```yaml
-    environment:
-      - WARP_LICENSE=your-warp-plus-key
-```
-
-### Using with Docker CLI
-
-Add the `-e` flag:
-
-```bash
-docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  -e WARP_LICENSE=your-warp-plus-key \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
-```
-
-### Upgrading from Free to WARP+
-
-If you already have a running free WARP container, simply add the `WARP_LICENSE` variable and restart the container. The container will automatically re-register with WARP+ (Cloudflare requires a new registration to apply a license).
-
-### Verifying WARP+ Status
-
-```bash
-curl --interface warp https://www.cloudflare.com/cdn-cgi/trace
-```
-
-Look for `warp=plus` in the output to confirm WARP+ is active.
-
 ## Quick Start
 
-### Install Docker (if not installed)
+### Automatic Installation (Recommended)
 
-Follow the official instructions:
+```bash
+sudo bash -c "$(curl -sL https://raw.githubusercontent.com/xxphantom/docker-warp-native/main/install.sh)"
+```
 
-- [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
+The installer will:
+- Check and install dependencies (curl, Docker)
+- Offer to enter a WARP+ license (optional)
+- Download `docker-compose.yml` and start the container
+- Provide an interactive menu for management: update, remove, status, license
 
-## Launch is possible in two ways (docker compose variant is recommended):
+Supported OS: Ubuntu, Debian.
 
-### 1. Initial launch using Docker Compose (required on each node)
+<details>
+<summary>Manual Setup with Docker Compose</summary>
 
 ```bash
 mkdir -p /opt/docker-warp-native
@@ -73,7 +38,7 @@ docker compose up -d && docker compose logs -f -t
 
 **Important:** Since version 1.1.0 docker-compose.yml, configuration files will be stored in `/opt/docker-warp-native` directory after initial launch.
 
-### Container Management (docker compose variant)
+#### Container Management
 
 ```bash
 # Go to directory with docker-compose.yml
@@ -95,59 +60,38 @@ docker compose down && docker compose up -d && docker compose logs -f -t
 docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t
 ```
 
-### 2. Initial launch using Docker CLI (required on each node)
+</details>
 
-```bash
-mkdir -p /opt/docker-warp-native
+## WARP+ Support
 
-docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  # -e WARP_LICENSE=your-warp-plus-key \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
+The container supports WARP+ (Cloudflare's premium tier) via the `WARP_LICENSE` environment variable.
+
+### Using the Installer
+
+Run the installer and select the license management option from the interactive menu.
+
+### Using Docker Compose
+
+Uncomment the `environment` section in `docker-compose.yml`:
+
+```yaml
+    environment:
+      - WARP_LICENSE=your-warp-plus-key
 ```
 
-### Container Management (docker run variant)
+### Upgrading from Free to WARP+
+
+If you already have a running free WARP container, simply add the `WARP_LICENSE` variable and restart the container. The container will automatically re-register with WARP+ (Cloudflare requires a new registration to apply a license).
+
+### Verifying WARP+ Status
 
 ```bash
-# Start container
-docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
-
-# View logs
-docker logs -f -t warp-native
-
-# Stop container
-docker stop warp-native
-
-# Restart container
-docker restart warp-native
-
-# Update container
-docker pull ghcr.io/xxphantom/docker-warp-native:latest && docker stop warp-native && docker rm warp-native && docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
+curl --interface warp https://www.cloudflare.com/cdn-cgi/trace
 ```
 
-### Verify WARP connection
+Look for `warp=plus` in the output to confirm WARP+ is active.
+
+## Verify WARP Connection
 
 ```bash
 curl --interface warp https://ipinfo.io
@@ -230,7 +174,7 @@ After starting the container, WARP interface will be available on the host syste
 
 ## Requirements
 
-- Docker
+- Docker (the installer automatically installs Docker on Ubuntu/Debian)
 - Linux kernel with WireGuard support
 - NET_ADMIN and SYS_MODULE capabilities
 
