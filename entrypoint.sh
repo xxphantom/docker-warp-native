@@ -24,10 +24,15 @@ error_exit() {
     exit 1
 }
 
-is_warp_plus() {
-    [ -f /etc/wireguard/wgcf-account.toml ] || return 1
-    account_type=$(grep 'account_type' /etc/wireguard/wgcf-account.toml | cut -d'"' -f2)
-    [ -n "$account_type" ] && [ "$account_type" = "plus" ]
+get_license_hash() {
+    printf '%s' "$1" | sha256sum | cut -d' ' -f1
+}
+
+license_matches() {
+    [ -f /etc/wireguard/.license_hash ] || return 1
+    stored_hash=$(cat /etc/wireguard/.license_hash)
+    current_hash=$(get_license_hash "$WARP_LICENSE")
+    [ "$stored_hash" = "$current_hash" ]
 }
 
 echo ""
@@ -38,7 +43,7 @@ printf "\033[1;96m━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Upgrade from free to WARP+ if license provided
-if [ -n "$WARP_LICENSE" ] && [ -f /etc/wireguard/warp.conf ] && ! is_warp_plus; then
+if [ -n "$WARP_LICENSE" ] && [ -f /etc/wireguard/warp.conf ] && ! license_matches; then
     info "WARP+ license detected. Upgrading from free account..."
     warn "Re-registration required due to Cloudflare API limitations"
     if wg show warp >/dev/null 2>&1; then
@@ -108,6 +113,7 @@ else
             info "Regenerating configuration with WARP+..."
             wgcf generate || error_exit "Failed to regenerate WARP+ configuration"
             ok "WARP+ configuration generated"
+            get_license_hash "$WARP_LICENSE" > /etc/wireguard/.license_hash
         else
             warn "Failed to apply WARP+ license. Check your key."
             info "Continuing with free WARP"
@@ -195,16 +201,9 @@ else
     fail "Cloudflare did not respond in time"
 fi
 
-# Show account type from local config
-if is_warp_plus; then
-    ok "Account type: WARP+"
-else
-    info "Account type: Free"
-fi
-
-if is_warp_plus; then
+if [ "$curl_result" = "plus" ]; then
     ok "WARP+ is ready!"
-else
+elif [ "$curl_result" = "on" ]; then
     ok "WARP is ready!"
 fi
 info "Container is running. WARP interface is active."
