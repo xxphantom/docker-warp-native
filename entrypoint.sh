@@ -24,12 +24,29 @@ error_exit() {
     exit 1
 }
 
+is_warp_plus() {
+    [ -f /etc/wireguard/wgcf-account.toml ] || return 1
+    account_type=$(grep 'account_type' /etc/wireguard/wgcf-account.toml | cut -d'"' -f2)
+    [ -n "$account_type" ] && [ "$account_type" = "plus" ]
+}
+
 echo ""
 printf "\033[1;96m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 printf "\033[1;96m  \033[0m \033[1;97mDocker\033[0m \033[1;36mWARP\033[0m \033[1;97mNative\033[0m\n"
 printf "\033[2;37m   Cloudflare WARP in Docker Container\033[0m\n"
 printf "\033[1;96m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 echo ""
+
+# Upgrade from free to WARP+ if license provided
+if [ -n "$WARP_LICENSE" ] && [ -f /etc/wireguard/warp.conf ] && ! is_warp_plus; then
+    info "WARP+ license detected. Upgrading from free account..."
+    warn "Re-registration required due to Cloudflare API limitations"
+    if wg show warp >/dev/null 2>&1; then
+        wg-quick down warp 2>/dev/null || true
+    fi
+    rm -f /etc/wireguard/warp.conf /etc/wireguard/wgcf-profile.conf /etc/wireguard/wgcf-account.toml
+    ok "Old account removed, proceeding with WARP+ registration"
+fi
 
 # Check if warp.conf already exists
 if [ -f /etc/wireguard/warp.conf ]; then
@@ -82,7 +99,21 @@ else
     
     info "Generating WARP configuration..."
     wgcf generate || error_exit "Failed to generate WARP configuration"
-    
+
+    # Apply WARP+ license if provided
+    if [ -n "$WARP_LICENSE" ]; then
+        info "Applying WARP+ license..."
+        if wgcf update --license-key "$WARP_LICENSE" 2>&1; then
+            ok "WARP+ license applied successfully"
+            info "Regenerating configuration with WARP+..."
+            wgcf generate || error_exit "Failed to regenerate WARP+ configuration"
+            ok "WARP+ configuration generated"
+        else
+            warn "Failed to apply WARP+ license. Check your key."
+            info "Continuing with free WARP"
+        fi
+    fi
+
     info "Configuring WARP..."
     
     # Add Table = off
@@ -154,7 +185,9 @@ done
 
 # Always verify with Cloudflare API
 curl_result=$(curl -s --interface warp --max-time 5 https://www.cloudflare.com/cdn-cgi/trace | grep "warp=" | cut -d= -f2)
-if [ "$curl_result" = "on" ]; then
+if [ "$curl_result" = "plus" ]; then
+    ok "Cloudflare confirmed: warp=plus — WARP+ is active!"
+elif [ "$curl_result" = "on" ]; then
     ok "Cloudflare confirmed: warp=on"
 elif [ "$curl_result" = "off" ]; then
     warn "Cloudflare confirmed: warp=off"
@@ -162,7 +195,18 @@ else
     fail "Cloudflare did not respond in time"
 fi
 
-ok "WARP is ready!"
+# Show account type from local config
+if is_warp_plus; then
+    ok "Account type: WARP+"
+else
+    info "Account type: Free"
+fi
+
+if is_warp_plus; then
+    ok "WARP+ is ready!"
+else
+    ok "WARP is ready!"
+fi
 info "Container is running. WARP interface is active."
 
 # Keep container running and handle signals

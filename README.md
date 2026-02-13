@@ -10,6 +10,48 @@ Docker container for running Cloudflare WARP, publishing WireGuard interface to 
 - Minimal image size (~40MB) based on Alpine Linux
 - Very low memory usage (just a few megabytes)
 
+## WARP+ Support
+
+The container supports WARP+ (Cloudflare's premium tier) via the `WARP_LICENSE` environment variable.
+
+### Using with Docker Compose
+
+Uncomment the `environment` section in `docker-compose.yml`:
+
+```yaml
+    environment:
+      - WARP_LICENSE=your-warp-plus-key
+```
+
+### Using with Docker CLI
+
+Add the `-e` flag:
+
+```bash
+docker run -d \
+  --name warp-native \
+  --network host \
+  --cap-add NET_ADMIN \
+  --cap-add SYS_MODULE \
+  -e WARP_LICENSE=your-warp-plus-key \
+  -v /opt/docker-warp-native:/etc/wireguard \
+  -v /lib/modules:/lib/modules:ro \
+  --restart always \
+  ghcr.io/xxphantom/docker-warp-native:latest
+```
+
+### Upgrading from Free to WARP+
+
+If you already have a running free WARP container, simply add the `WARP_LICENSE` variable and restart the container. The container will automatically re-register with WARP+ (Cloudflare requires a new registration to apply a license).
+
+### Verifying WARP+ Status
+
+```bash
+curl --interface warp https://www.cloudflare.com/cdn-cgi/trace
+```
+
+Look for `warp=plus` in the output to confirm WARP+ is active.
+
 ## Quick Start
 
 ### Install Docker (if not installed)
@@ -63,6 +105,7 @@ docker run -d \
   --network host \
   --cap-add NET_ADMIN \
   --cap-add SYS_MODULE \
+  # -e WARP_LICENSE=your-warp-plus-key \
   -v /opt/docker-warp-native:/etc/wireguard \
   -v /lib/modules:/lib/modules:ro \
   --restart always \

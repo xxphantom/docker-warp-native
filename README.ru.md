@@ -10,6 +10,48 @@ Docker контейнер для запуска Cloudflare WARP, публику�
 - Минимальный размер образа (~40MB) на базе Alpine Linux
 - Очень низкое потребление памяти (всего несколько мегабайт)
 
+## Поддержка WARP+
+
+Контейнер поддерживает WARP+ (премиум-тариф Cloudflare) через переменную окружения `WARP_LICENSE`.
+
+### Использование с Docker Compose
+
+Раскомментируйте секцию `environment` в `docker-compose.yml`:
+
+```yaml
+    environment:
+      - WARP_LICENSE=your-warp-plus-key
+```
+
+### Использование с Docker CLI
+
+Добавьте флаг `-e`:
+
+```bash
+docker run -d \
+  --name warp-native \
+  --network host \
+  --cap-add NET_ADMIN \
+  --cap-add SYS_MODULE \
+  -e WARP_LICENSE=your-warp-plus-key \
+  -v /opt/docker-warp-native:/etc/wireguard \
+  -v /lib/modules:/lib/modules:ro \
+  --restart always \
+  ghcr.io/xxphantom/docker-warp-native:latest
+```
+
+### Обновление с Free до WARP+
+
+Если у вас уже запущен контейнер с бесплатным WARP, просто добавьте переменную `WARP_LICENSE` и перезапустите контейнер. Контейнер автоматически выполнит повторную регистрацию с WARP+ (Cloudflare требует новую регистрацию для применения лицензии).
+
+### Проверка статуса WARP+
+
+```bash
+curl --interface warp https://www.cloudflare.com/cdn-cgi/trace
+```
+
+Ищите `warp=plus` в выводе для подтверждения активности WARP+.
+
 ## Быстрый старт
 
 ### Установка Docker (если не установлен)
@@ -63,6 +105,7 @@ docker run -d \
   --network host \
   --cap-add NET_ADMIN \
   --cap-add SYS_MODULE \
+  # -e WARP_LICENSE=your-warp-plus-key \
   -v /opt/docker-warp-native:/etc/wireguard \
   -v /lib/modules:/lib/modules:ro \
   --restart always \
