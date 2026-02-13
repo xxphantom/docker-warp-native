@@ -10,59 +10,24 @@ Docker контейнер для запуска Cloudflare WARP, публику�
 - Минимальный размер образа (~40MB) на базе Alpine Linux
 - Очень низкое потребление памяти (всего несколько мегабайт)
 
-## Поддержка WARP+
-
-Контейнер поддерживает WARP+ (премиум-тариф Cloudflare) через переменную окружения `WARP_LICENSE`.
-
-### Использование с Docker Compose
-
-Раскомментируйте секцию `environment` в `docker-compose.yml`:
-
-```yaml
-    environment:
-      - WARP_LICENSE=your-warp-plus-key
-```
-
-### Использование с Docker CLI
-
-Добавьте флаг `-e`:
-
-```bash
-docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  -e WARP_LICENSE=your-warp-plus-key \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
-```
-
-### Обновление с Free до WARP+
-
-Если у вас уже запущен контейнер с бесплатным WARP, просто добавьте переменную `WARP_LICENSE` и перезапустите контейнер. Контейнер автоматически выполнит повторную регистрацию с WARP+ (Cloudflare требует новую регистрацию для применения лицензии).
-
-### Проверка статуса WARP+
-
-```bash
-curl --interface warp https://www.cloudflare.com/cdn-cgi/trace
-```
-
-Ищите `warp=plus` в выводе для подтверждения активности WARP+.
-
 ## Быстрый старт
 
-### Установка Docker (если не установлен)
+### Автоматическая установка
 
-Следуйте официальным инструкциям:
+```bash
+sudo bash -c "$(curl -sL https://raw.githubusercontent.com/xxphantom/docker-warp-native/main/install.sh)" @ --lang=ru
+```
 
-- [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
+Установщик выполнит:
+- Проверку и установку зависимостей (curl, Docker)
+- Предложит ввести WARP+ лицензию (опционально)
+- Скачает `docker-compose.yml` и запустит контейнер
+- Интерактивное меню для управления: обновление, удаление, статус, лицензия
 
-## Запуск возможен в двух вариантах (вариант docker compose рекомендуется):
+Поддерживаемые ОС: Ubuntu, Debian.
 
-### 1. Первичный запуск с помощью Docker Compose (требуется на каждой ноде)
+<details>
+<summary>Ручная установка с Docker Compose</summary>
 
 ```bash
 mkdir -p /opt/docker-warp-native
@@ -73,7 +38,7 @@ docker compose up -d && docker compose logs -f -t
 
 **Важно!** С версии 1.1.0 docker-compose.yml, файлы конфигурации будут храниться в директории `/opt/docker-warp-native` после первого запуска.
 
-### Управление контейнером (вариант docker compose)
+#### Управление контейнером
 
 ```bash
 # Перейти в директорию с docker-compose.yml
@@ -95,59 +60,38 @@ docker compose down && docker compose up -d && docker compose logs -f -t
 docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t
 ```
 
-### 2. Первичный запуск с помощью Docker CLI (требуется на каждой ноде)
+</details>
 
-```bash
-mkdir -p /opt/docker-warp-native
+## Поддержка WARP+
 
-docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  # -e WARP_LICENSE=your-warp-plus-key \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
+Контейнер поддерживает WARP+ (премиум-тариф Cloudflare) через переменную окружения `WARP_LICENSE`.
+
+### Через установщик
+
+Запустите установщик и выберите опцию управления лицензией в интерактивном меню.
+
+### Через Docker Compose
+
+Раскомментируйте секцию `environment` в `docker-compose.yml`:
+
+```yaml
+    environment:
+      - WARP_LICENSE=your-warp-plus-key
 ```
 
-### Управление контейнером (вариант запуска docker run)
+### Обновление с Free до WARP+
+
+Если у вас уже запущен контейнер с бесплатным WARP, просто добавьте переменную `WARP_LICENSE` и перезапустите контейнер. Контейнер автоматически выполнит повторную регистрацию с WARP+ (Cloudflare требует новую регистрацию для применения лицензии).
+
+### Проверка статуса WARP+
 
 ```bash
-# Запустить контейнер
-docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
-
-# Посмотреть логи
-docker logs -f -t warp-native
-
-# Остановить контейнер
-docker stop warp-native
-
-# Перезапустить контейнер
-docker restart warp-native
-
-# Обновить контейнер
-docker pull ghcr.io/xxphantom/docker-warp-native:latest && docker stop warp-native && docker rm warp-native && docker run -d \
-  --name warp-native \
-  --network host \
-  --cap-add NET_ADMIN \
-  --cap-add SYS_MODULE \
-  -v /opt/docker-warp-native:/etc/wireguard \
-  -v /lib/modules:/lib/modules:ro \
-  --restart always \
-  ghcr.io/xxphantom/docker-warp-native:latest
+curl --interface warp https://www.cloudflare.com/cdn-cgi/trace
 ```
 
-### Проверка подключения к WARP
+Ищите `warp=plus` в выводе для подтверждения активности WARP+.
+
+## Проверка подключения к WARP
 
 ```bash
 curl --interface warp https://ipinfo.io
@@ -229,7 +173,7 @@ curl --interface warp https://ipinfo.io
 
 ## Требования
 
-- Docker
+- Docker (установщик автоматически устанавливает Docker на Ubuntu/Debian)
 - Ядро Linux с поддержкой WireGuard
 - Права NET_ADMIN и SYS_MODULE
 
