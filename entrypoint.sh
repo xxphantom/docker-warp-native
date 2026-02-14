@@ -53,6 +53,14 @@ if [ -n "$WARP_LICENSE" ] && [ -f /etc/wireguard/warp.conf ] && ! license_matche
     ok "Old account removed, proceeding with WARP+ registration"
 fi
 
+# Detect removed WARP+ license
+if [ -z "$WARP_LICENSE" ] && [ -f /etc/wireguard/.license_hash ]; then
+    warn "WARP_LICENSE env variable is not set, but previous WARP+ config found."
+    warn "Using existing WARP+ configuration."
+    warn "To downgrade to free: remove warp.conf and wgcf-account.toml from config volume, then restart"
+    rm -f /etc/wireguard/.license_hash
+fi
+
 # Check if warp.conf already exists
 if [ -f /etc/wireguard/warp.conf ]; then
     info "Found existing WARP configuration"
